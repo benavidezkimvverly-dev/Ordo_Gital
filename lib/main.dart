@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/database/database_helper.dart';
+import 'features/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,24 +16,8 @@ class OrdoGitalApp extends StatelessWidget {
     return MaterialApp(
       title: 'OrdoGital',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'OrdoGital',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Database loaded!',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
+      theme: ThemeData(fontFamily: 'Roboto', useMaterial3: true),
+      home: const LoginScreen(),
     );
   }
 }
