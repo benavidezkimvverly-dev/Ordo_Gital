@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../auth/auth_repository.dart';
-import '../../shared/models/user_model.dart';
+import 'package:ordogital/features/auth/auth_repository.dart';
+import 'package:ordogital/shared/models/user_model.dart';
+import 'package:ordogital/features/dashboard/parishioner/parishioner_dashboard.dart';
+import 'package:ordogital/features/dashboard/ministry/ministry_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,9 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     UserModel? user;
 
-    if (_selectedRole == 'admin') {
-      user = await _authRepo.loginAdmin(_inputController.text.trim());
-    } else if (_selectedRole == 'ministry') {
+    if (_selectedRole == 'ministry') {
       user = await _authRepo.loginMinistry(_inputController.text.trim());
     } else {
       user = await _authRepo.loginParishioner();
@@ -37,23 +37,28 @@ class _LoginScreenState extends State<LoginScreen> {
     if (user == null) {
       setState(() {
         _isLoading = false;
-        _errorMessage = _selectedRole == 'admin'
-            ? 'Mali ang password. Subukan ulit.'
-            : 'Hindi mahanap ang Access Key. Subukan ulit.';
+        _errorMessage = 'Hindi mahanap ang Access Key. Subukan ulit.';
       });
       return;
     }
 
     await _authRepo.saveSession(user);
 
+    setState(() => _isLoading = false);
+
     if (!mounted) return;
 
-    // Navigate to dashboard based on role
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Welcome, ${user.fullName}!')));
-
-    setState(() => _isLoading = false);
+    if (user.role == 'parishioner') {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => ParishionerDashboard(user: user!),
+        ),
+      );
+    } else if (user.role == 'ministry') {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => MinistryDashboard(user: user!)),
+      );
+    }
   }
 
   @override
@@ -67,8 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 60),
-
-              // Logo / Header
               Container(
                 width: 90,
                 height: 90,
@@ -92,8 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
               ),
               const SizedBox(height: 48),
-
-              // Role selector
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -105,19 +106,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     _buildRoleTab('parishioner', 'Parishioner'),
                     _buildRoleTab('ministry', 'Ministry'),
-                    _buildRoleTab('admin', 'Admin'),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Input field
               if (_selectedRole != 'parishioner') ...[
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    _selectedRole == 'admin' ? 'Password' : 'Access Key',
-                    style: const TextStyle(
+                  child: const Text(
+                    'Access Key',
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF374151),
@@ -129,9 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _inputController,
                   obscureText: _obscureText,
                   decoration: InputDecoration(
-                    hintText: _selectedRole == 'admin'
-                        ? 'Ilagay ang password'
-                        : 'Ilagay ang Access Key',
+                    hintText: 'Ilagay ang Access Key',
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -161,8 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
-
-              // Error message
               if (_errorMessage != null) ...[
                 Container(
                   width: double.infinity,
@@ -181,8 +175,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
-
-              // Login button
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -216,14 +208,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
               ),
-
-              if (_selectedRole == 'admin') ...[
-                const SizedBox(height: 12),
-                const Text(
-                  'Default password: admin123',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-                ),
-              ],
             ],
           ),
         ),
