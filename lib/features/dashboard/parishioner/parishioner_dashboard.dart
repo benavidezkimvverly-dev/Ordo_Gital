@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
 import '../../auth/auth_repository.dart';
 import '../../auth/login_screen.dart';
 import '../../../shared/models/user_model.dart';
+import 'package:ordogital/features/missalette/daily_readings_screen.dart';
+import 'package:ordogital/features/missalette/mass_schedule_screen.dart';
+import 'package:ordogital/features/announcements/announcements_screen.dart';
+import 'package:ordogital/features/transparency/parish_projects_screen.dart';
+import 'package:ordogital/features/missalette/hymns_screen.dart';
+import 'package:ordogital/features/trivia/trivia_screen.dart';
 
 class ParishionerDashboard extends StatelessWidget {
   final UserModel user;
@@ -86,37 +93,73 @@ class ParishionerDashboard extends StatelessWidget {
                     icon: Icons.menu_book,
                     label: 'Daily Readings',
                     color: const Color(0xFF8B5CF6),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const DailyReadingsScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.schedule,
                     label: 'Mass Schedule',
                     color: const Color(0xFF059669),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => MassScheduleScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.campaign,
                     label: 'Announcements',
                     color: const Color(0xFFD97706),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => AnnouncementsScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.bar_chart,
                     label: 'Parish Projects',
                     color: const Color(0xFFDC2626),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const ParishProjectsScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.music_note,
                     label: 'Hymns',
                     color: const Color(0xFF0284C7),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const HymnsScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.quiz,
                     label: 'Liturgical Trivia',
                     color: const Color(0xFF7C3AED),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const TriviaScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
