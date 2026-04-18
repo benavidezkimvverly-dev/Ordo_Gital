@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'core/database/database_helper.dart';
-import 'features/auth/login_screen.dart';
+import 'package:ordogital/core/database/database_helper.dart';
+import 'package:ordogital/core/theme/app_theme.dart';
+import 'package:ordogital/core/theme/liturgical_season.dart';
+import 'package:ordogital/features/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,10 +15,13 @@ class OrdoGitalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final season = LiturgicalCalendar.getCurrentSeason();
+    final theme = LiturgicalTheme.getTheme(season);
+
     return MaterialApp(
       title: 'OrdoGital',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Roboto', useMaterial3: true),
+      theme: theme,
       home: const LoginScreen(),
     );
   }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:ordogital/core/theme/liturgical_season.dart';
 import 'package:ordogital/features/auth/auth_repository.dart';
 import 'package:ordogital/shared/models/user_model.dart';
 import 'package:ordogital/features/dashboard/parishioner/parishioner_dashboard.dart';
 import 'package:ordogital/features/dashboard/ministry/ministry_dashboard.dart';
+import 'package:ordogital/core/theme/app_theme.dart';
+import 'package:ordogital/core/theme/liturgical_season.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,7 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
+      backgroundColor: LiturgicalTheme.getBackgroundColor(
+        LiturgicalCalendar.getCurrentSeason(),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
