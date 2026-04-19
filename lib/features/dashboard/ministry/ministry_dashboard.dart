@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../../auth/auth_repository.dart';
 import '../../auth/login_screen.dart';
 import '../../../shared/models/user_model.dart';
+import 'package:ordogital/features/ministry_sync/duty_schedule_screen.dart';
+import 'package:ordogital/features/missalette/daily_readings_screen.dart';
+import 'package:ordogital/features/announcements/announcements_screen.dart';
+import 'package:ordogital/features/transparency/parish_projects_screen.dart';
 
 class MinistryDashboard extends StatelessWidget {
   final UserModel user;
@@ -86,25 +90,49 @@ class MinistryDashboard extends StatelessWidget {
                     icon: Icons.assignment,
                     label: 'Duty Schedule',
                     color: const Color(0xFF8B5CF6),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => DutyScheduleScreen(user: user),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.menu_book,
                     label: 'Daily Readings',
                     color: const Color(0xFF059669),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const DailyReadingsScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.campaign,
                     label: 'Announcements',
                     color: const Color(0xFFD97706),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const AnnouncementsScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildMenuCard(
                     icon: Icons.bar_chart,
                     label: 'Parish Projects',
                     color: const Color(0xFFDC2626),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const ParishProjectsScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
