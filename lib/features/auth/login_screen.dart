@@ -5,7 +5,6 @@ import 'package:ordogital/shared/models/user_model.dart';
 import 'package:ordogital/features/dashboard/parishioner/parishioner_dashboard.dart';
 import 'package:ordogital/features/dashboard/ministry/ministry_dashboard.dart';
 import 'package:ordogital/core/theme/app_theme.dart';
-import 'package:ordogital/core/theme/liturgical_season.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,9 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     await _authRepo.saveSession(user);
-
     setState(() => _isLoading = false);
-
     if (!mounted) return;
 
     if (user.role == 'parishioner') {
