@@ -1,11 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ordogital/core/database/database_helper.dart';
 import 'package:ordogital/core/theme/app_theme.dart';
 import 'package:ordogital/core/theme/liturgical_season.dart';
 import 'package:ordogital/features/auth/login_screen.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:sqflite_common/sqflite.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  }
+
   await DatabaseHelper.instance.database;
   runApp(const OrdoGitalApp());
 }
