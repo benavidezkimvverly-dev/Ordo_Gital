@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "578300252197",
+    "project_id": "ordogital-2dfc5",
+    "storage_bucket": "ordogital-2dfc5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578300252197:android:607a27eccc2b440341afcc",
+        "android_client_info": {
+          "package_name": "com.example.ordogital"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpyUWKv2eg-e0BBegRb2edRhjtknv1W68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578300252197:android:6c7abbabc2e9c0d941afcc",
+        "android_client_info": {
+          "package_name": "com.example.ordogitall"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpyUWKv2eg-e0BBegRb2edRhjtknv1W68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

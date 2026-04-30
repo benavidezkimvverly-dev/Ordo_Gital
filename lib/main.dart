@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ordogital/core/database/database_helper.dart';
@@ -5,14 +6,19 @@ import 'package:ordogital/core/theme/app_theme.dart';
 import 'package:ordogital/core/theme/liturgical_season.dart';
 import 'package:ordogital/features/auth/auth_repository.dart';
 import 'package:ordogital/features/auth/login_screen.dart';
+import 'package:ordogital/features/auth/welcome_screen.dart';
 import 'package:ordogital/features/dashboard/ministry/ministry_dashboard.dart';
 import 'package:ordogital/features/dashboard/parishioner/parishioner_dashboard.dart';
 import 'package:ordogital/shared/models/user_model.dart';
+import 'package:ordogital/firebase_options.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite_common/sqflite.dart';
+import 'package:ordogital/features/admin/admin_login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (kIsWeb) {
     databaseFactory = databaseFactoryFfiWeb;
@@ -34,7 +40,9 @@ class OrdoGitalApp extends StatelessWidget {
       title: 'OrdoGital',
       debugShowCheckedModeBanner: false,
       theme: theme,
-      home: const SplashScreen(),
+      // Kapag web — Admin Portal
+      // Kapag mobile — Mobile App
+      home: kIsWeb ? const AdminLoginScreen() : const SplashScreen(),
     );
   }
 }

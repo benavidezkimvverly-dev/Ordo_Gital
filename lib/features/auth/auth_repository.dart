@@ -1,83 +1,82 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/database/database_helper.dart';
 import '../../shared/models/user_model.dart';
 
 class AuthRepository {
-  final DatabaseHelper _db = DatabaseHelper.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Admin login — gamit ang password
-  Future<UserModel?> loginAdmin(String password) async {
-    // Default admin password: 'admin123'
-    // Palitan mo ito later ng mas secure
-    if (password != 'admin123') return null;
-
-    final result = await _db.queryWhere('users', 'role = ? AND is_active = ?', [
-      'admin',
-      1,
-    ]);
-
-    if (result.isEmpty) return null;
-    return UserModel.fromMap(result.first);
-  }
-
-  // Ministry Member login — gamit ang Access Key
+  // Ministry Member login — Firestore na
   Future<UserModel?> loginMinistry(String accessKey) async {
-    final result = await _db.queryWhere(
-      'users',
-      'access_key = ? AND role = ? AND is_active = ?',
-      [accessKey, 'ministry', 1],
-    );
+    try {
+      final result = await _firestore
+          .collection('users')
+          .where('access_key', isEqualTo: accessKey)
+          .where('role', isEqualTo: 'ministry')
+          .where('is_active', isEqualTo: true)
+          .get();
 
-    if (result.isEmpty) return null;
-    return UserModel.fromMap(result.first);
-  }
+      if (result.docs.isEmpty) return null;
 
-  // Parishioner — walang login, guest access lang
-  Future<UserModel> loginParishioner() async {
-    final result = await _db.queryWhere('users', 'role = ? AND is_active = ?', [
-      'parishioner',
-      1,
-    ]);
-
-    if (result.isEmpty) {
-      // Gumawa ng guest parishioner account
-      final id = await _db.insert('users', {
-        'full_name': 'Guest Parishioner',
-        'role': 'parishioner',
-        'is_active': 1,
-      });
-
+      final data = result.docs.first.data();
       return UserModel(
-        id: id,
-        fullName: 'Guest Parishioner',
-        role: 'parishioner',
+        id: null,
+        fullName: data['full_name'] ?? '',
+        role: data['role'] ?? '',
+        phone: data['phone'],
+        accessKey: data['access_key'],
+        ministryType: data['ministry_type'],
+        isActive: data['is_active'] ?? true,
       );
+    } catch (e) {
+      return null;
     }
-
-    return UserModel.fromMap(result.first);
   }
 
-  // I-save ang logged in user sa SharedPreferences
+  // Admin login — password lang, walang Firestore
+  Future<bool> loginAdmin(String password) async {
+    return password == 'admin123';
+  }
+
+  // Parishioner — walang Firestore, guest access lang
+  Future<UserModel> loginParishioner() async {
+    return UserModel(id: null, fullName: '', role: 'parishioner');
+  }
+
+  // I-save ang session sa SharedPreferences
   Future<void> saveSession(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('user_id', user.id!);
     await prefs.setString('user_role', user.role);
     await prefs.setString('user_name', user.fullName);
+    if (user.accessKey != null) {
+      await prefs.setString('access_key', user.accessKey!);
+    }
+    if (user.ministryType != null) {
+      await prefs.setString('ministry_type', user.ministryType!);
+    }
+    if (user.phone != null) {
+      await prefs.setString('phone', user.phone!);
+    }
   }
 
   // Kunin ang current session
   Future<UserModel?> getSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id');
     final userRole = prefs.getString('user_role');
     final userName = prefs.getString('user_name');
 
-    if (userId == null || userRole == null) return null;
+    if (userRole == null) return null;
 
-    return UserModel(id: userId, fullName: userName ?? '', role: userRole);
+    return UserModel(
+      id: null,
+      fullName: userName ?? '',
+      role: userRole,
+      accessKey: prefs.getString('access_key'),
+      ministryType: prefs.getString('ministry_type'),
+      phone: prefs.getString('phone'),
+    );
   }
 
-  // Logout — burahin ang session
+  // Logout
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
