@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import '../../auth/auth_repository.dart';
 import '../../auth/login_screen.dart';
 import '../../../shared/models/user_model.dart';
@@ -10,156 +9,184 @@ import 'package:ordogital/features/transparency/parish_projects_screen.dart';
 import 'package:ordogital/features/missalette/hymns_screen.dart';
 import 'package:ordogital/features/trivia/trivia_screen.dart';
 
-class ParishionerDashboard extends StatelessWidget {
+class ParishionerDashboard extends StatefulWidget {
   final UserModel user;
   const ParishionerDashboard({super.key, required this.user});
 
   @override
+  State<ParishionerDashboard> createState() => _ParishionerDashboardState();
+}
+
+class _ParishionerDashboardState extends State<ParishionerDashboard> {
+  // Flag para sa toggle ng sidebar
+  bool isExpanded = false;
+
+  final Color primaryNavy = const Color(0xFF2A3A66);
+  final Color scaffoldBg = const Color(0xFFE8E8E8);
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6B4EFF),
-        foregroundColor: Colors.white,
-        title: const Text('OrdoGital'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AuthRepository().logout();
-              if (!context.mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: scaffoldBg,
+      // Ginagamit natin ang Row para magkatabi ang Sidebar at Content
+      body: SafeArea(
+        child: Row(
           children: [
-            // Welcome card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B4EFF),
-                borderRadius: BorderRadius.circular(16),
-              ),
+            // --- CUSTOM SIDEBAR ---
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isExpanded ? 250 : 70, // Dito nagbabago ang lapad
+              color: Colors.white, // Ginawa nating puti para malinis tignan
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Mabuhay! 🙏',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.fullName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 10),
+
+                  // HAMBURGER BUTTON (Toggle)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: IconButton(
+                      icon: Icon(Icons.menu, color: primaryNavy, size: 30),
+                      onPressed: () {
+                        setState(() {
+                          isExpanded = !isExpanded;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Parishioner',
-                    style: TextStyle(color: Colors.white60, fontSize: 13),
+
+                  const SizedBox(height: 20),
+
+                  // USER PROFILE (Lilitaw lang pag expanded)
+                  if (isExpanded)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: primaryNavy,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.person,
+                              size: 20,
+                              color: Color(0xFF2A3A66),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Hello, ${widget.user.fullName}!',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 20),
+
+                  // NAVIGATION ITEMS
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        _sidebarItem(
+                          Icons.menu_book,
+                          'Daily Readings',
+                          const DailyReadingsScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.schedule,
+                          'Mass Schedule',
+                          const MassScheduleScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.campaign,
+                          'Announcements',
+                          const AnnouncementsScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.bar_chart,
+                          'Parish Projects',
+                          const ParishProjectsScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.music_note,
+                          'Hymns',
+                          const HymnsScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.quiz,
+                          'Liturgical Trivia',
+                          const TriviaScreen(),
+                        ),
+
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 15),
+                          child: Divider(),
+                        ),
+
+                        _sidebarItem(
+                          Icons.logout,
+                          'Logout',
+                          null,
+                          isLogout: true,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Mga Serbisyo',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2D1B69),
-              ),
-            ),
-            const SizedBox(height: 12),
+
+            // --- MAIN CONTENT AREA ---
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+              child: Column(
                 children: [
-                  _buildMenuCard(
-                    icon: Icons.menu_book,
-                    label: 'Daily Readings',
-                    color: const Color(0xFF8B5CF6),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const DailyReadingsScreen(),
-                        ),
-                      );
-                    },
+                  // Custom Top Bar (Imbes na default AppBar)
+                  Container(
+                    height: 60,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'OrdoGital Dashboard',
+                      style: TextStyle(
+                        color: primaryNavy,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  _buildMenuCard(
-                    icon: Icons.schedule,
-                    label: 'Mass Schedule',
-                    color: const Color(0xFF059669),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => MassScheduleScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.campaign,
-                    label: 'Announcements',
-                    color: const Color(0xFFD97706),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => AnnouncementsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.bar_chart,
-                    label: 'Parish Projects',
-                    color: const Color(0xFFDC2626),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const ParishProjectsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.music_note,
-                    label: 'Hymns',
-                    color: const Color(0xFF0284C7),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const HymnsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.quiz,
-                    label: 'Liturgical Trivia',
-                    color: const Color(0xFF7C3AED),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const TriviaScreen(),
-                        ),
-                      );
-                    },
+
+                  // Ang laman ng screen mo
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.church_outlined,
+                            size: 80,
+                            color: primaryNavy.withOpacity(0.2),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Welcome, ${widget.user.fullName}!',
+                            style: TextStyle(color: primaryNavy, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -170,44 +197,38 @@ class ParishionerDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuCard({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
+  // Helper function para sa Sidebar Items
+  Widget _sidebarItem(
+    IconData icon,
+    String label,
+    Widget? destination, {
+    bool isLogout = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 10),
-            Text(
+    return ListTile(
+      leading: Icon(icon, color: primaryNavy),
+      title: isExpanded
+          ? Text(
               label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF374151),
-              ),
-            ),
-          ],
-        ),
-      ),
+              style: TextStyle(color: primaryNavy, fontWeight: FontWeight.w500),
+            )
+          : null,
+      onTap: () async {
+        if (isLogout) {
+          await AuthRepository().logout();
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+            );
+          }
+        } else if (destination != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => destination),
+          );
+        }
+      },
     );
   }
 }

@@ -7,132 +7,187 @@ import 'package:ordogital/features/missalette/daily_readings_screen.dart';
 import 'package:ordogital/features/announcements/announcements_screen.dart';
 import 'package:ordogital/features/transparency/parish_projects_screen.dart';
 
-class MinistryDashboard extends StatelessWidget {
+class MinistryDashboard extends StatefulWidget {
   final UserModel user;
   const MinistryDashboard({super.key, required this.user});
 
   @override
+  State<MinistryDashboard> createState() => _MinistryDashboardState();
+}
+
+class _MinistryDashboardState extends State<MinistryDashboard> {
+  // Toggle para sa sidebar
+  bool isExpanded = false;
+
+  final Color primaryNavy = const Color(0xFF2A3A66);
+  final Color scaffoldBg = const Color(0xFFE8E8E8);
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6B4EFF),
-        foregroundColor: Colors.white,
-        title: const Text('Ministry Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AuthRepository().logout();
-              if (!context.mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: scaffoldBg,
+      body: SafeArea(
+        child: Row(
           children: [
-            // Welcome card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B4EFF),
-                borderRadius: BorderRadius.circular(16),
-              ),
+            // --- SIDE NAVIGATION BAR ---
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: isExpanded
+                  ? 250
+                  : 70, // Nagbabago ang lapad base sa toggle
+              color: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Mabuhay! 🙏',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.fullName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 10),
+
+                  // HAMBURGER BUTTON
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: IconButton(
+                      icon: Icon(Icons.menu, color: primaryNavy, size: 30),
+                      onPressed: () {
+                        setState(() {
+                          isExpanded = !isExpanded;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.ministryType ?? 'Ministry Member',
-                    style: const TextStyle(color: Colors.white60, fontSize: 13),
+
+                  const SizedBox(height: 20),
+
+                  // USER HEADER (Lilitaw lang pag expanded)
+                  if (isExpanded)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: primaryNavy,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.person,
+                              size: 20,
+                              color: Color(0xFF2A3A66),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Hello, ${widget.user.fullName}!',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 20),
+
+                  // NAVIGATION ITEMS
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        // Eto yung special item para sa Ministry
+                        _sidebarItem(
+                          Icons.assignment,
+                          'Duty Schedule',
+                          DutyScheduleScreen(user: widget.user),
+                        ),
+                        _sidebarItem(
+                          Icons.menu_book,
+                          'Daily Readings',
+                          const DailyReadingsScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.campaign,
+                          'Announcements',
+                          const AnnouncementsScreen(),
+                        ),
+                        _sidebarItem(
+                          Icons.bar_chart,
+                          'Parish Projects',
+                          const ParishProjectsScreen(),
+                        ),
+
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 15),
+                          child: Divider(),
+                        ),
+
+                        _sidebarItem(
+                          Icons.logout,
+                          'Logout',
+                          null,
+                          isLogout: true,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Aking mga Gawain',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2D1B69),
-              ),
-            ),
-            const SizedBox(height: 12),
+
+            // --- MAIN CONTENT AREA ---
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+              child: Column(
                 children: [
-                  _buildMenuCard(
-                    icon: Icons.assignment,
-                    label: 'Duty Schedule',
-                    color: const Color(0xFF8B5CF6),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => DutyScheduleScreen(user: user),
-                        ),
-                      );
-                    },
+                  // Top Bar
+                  Container(
+                    height: 60,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Ministry Dashboard',
+                      style: TextStyle(
+                        color: primaryNavy,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  _buildMenuCard(
-                    icon: Icons.menu_book,
-                    label: 'Daily Readings',
-                    color: const Color(0xFF059669),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const DailyReadingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.campaign,
-                    label: 'Announcements',
-                    color: const Color(0xFFD97706),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AnnouncementsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: Icons.bar_chart,
-                    label: 'Parish Projects',
-                    color: const Color(0xFFDC2626),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const ParishProjectsScreen(),
-                        ),
-                      );
-                    },
+
+                  // Body Content
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.volunteer_activism,
+                            size: 80,
+                            color: primaryNavy.withOpacity(0.2),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            widget.user.ministryType ?? 'Ministry Member',
+                            style: TextStyle(
+                              color: primaryNavy,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Serving with joy!',
+                            style: TextStyle(
+                              color: primaryNavy.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -143,44 +198,38 @@ class MinistryDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuCard({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
+  // Sidebar Item Helper
+  Widget _sidebarItem(
+    IconData icon,
+    String label,
+    Widget? destination, {
+    bool isLogout = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(height: 10),
-            Text(
+    return ListTile(
+      leading: Icon(icon, color: primaryNavy),
+      title: isExpanded
+          ? Text(
               label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF374151),
-              ),
-            ),
-          ],
-        ),
-      ),
+              style: TextStyle(color: primaryNavy, fontWeight: FontWeight.w500),
+            )
+          : null,
+      onTap: () async {
+        if (isLogout) {
+          await AuthRepository().logout();
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+            );
+          }
+        } else if (destination != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => destination),
+          );
+        }
+      },
     );
   }
 }
