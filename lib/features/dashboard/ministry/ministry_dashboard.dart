@@ -4,6 +4,7 @@ import '../../auth/login_screen.dart';
 import '../../../shared/models/user_model.dart';
 import 'package:ordogital/features/ministry_sync/duty_schedule_screen.dart';
 import 'package:ordogital/features/missalette/daily_readings_screen.dart';
+import 'package:ordogital/features/missalette/mass_schedule_screen.dart';
 import 'package:ordogital/features/announcements/announcements_screen.dart';
 import 'package:ordogital/features/transparency/parish_projects_screen.dart';
 
@@ -16,7 +17,6 @@ class MinistryDashboard extends StatefulWidget {
 }
 
 class _MinistryDashboardState extends State<MinistryDashboard> {
-  // Toggle para sa sidebar
   bool isExpanded = false;
 
   final Color primaryNavy = const Color(0xFF2A3A66);
@@ -32,16 +32,12 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
             // --- SIDE NAVIGATION BAR ---
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              width: isExpanded
-                  ? 250
-                  : 70, // Nagbabago ang lapad base sa toggle
+              width: isExpanded ? 250 : 70,
               color: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-
-                  // HAMBURGER BUTTON
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: IconButton(
@@ -53,10 +49,7 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                       },
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // USER HEADER (Lilitaw lang pag expanded)
                   if (isExpanded)
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -91,15 +84,11 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                         ],
                       ),
                     ),
-
                   const SizedBox(height: 20),
-
-                  // NAVIGATION ITEMS
                   Expanded(
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
-                        // Eto yung special item para sa Ministry
                         _sidebarItem(
                           Icons.assignment,
                           'Duty Schedule',
@@ -109,6 +98,12 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                           Icons.menu_book,
                           'Daily Readings',
                           const DailyReadingsScreen(),
+                        ),
+                        // 👇 Idagdag ito
+                        _sidebarItem(
+                          Icons.schedule,
+                          'Mass Schedule',
+                          const MassScheduleScreen(),
                         ),
                         _sidebarItem(
                           Icons.campaign,
@@ -120,12 +115,10 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                           'Parish Projects',
                           const ParishProjectsScreen(),
                         ),
-
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 15),
                           child: Divider(),
                         ),
-
                         _sidebarItem(
                           Icons.logout,
                           'Logout',
@@ -143,7 +136,6 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
             Expanded(
               child: Column(
                 children: [
-                  // Top Bar
                   Container(
                     height: 60,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -157,8 +149,6 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                       ),
                     ),
                   ),
-
-                  // Body Content
                   Expanded(
                     child: Center(
                       child: Column(
@@ -167,7 +157,7 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                           Icon(
                             Icons.volunteer_activism,
                             size: 80,
-                            color: primaryNavy.withOpacity(0.2),
+                            color: primaryNavy.withValues(alpha: 0.2),
                           ),
                           const SizedBox(height: 10),
                           Text(
@@ -182,7 +172,7 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
                           Text(
                             'Serving with joy!',
                             style: TextStyle(
-                              color: primaryNavy.withOpacity(0.6),
+                              color: primaryNavy.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -198,7 +188,6 @@ class _MinistryDashboardState extends State<MinistryDashboard> {
     );
   }
 
-  // Sidebar Item Helper
   Widget _sidebarItem(
     IconData icon,
     String label,

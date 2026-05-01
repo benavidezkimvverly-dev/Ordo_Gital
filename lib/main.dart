@@ -11,8 +11,6 @@ import 'package:ordogital/features/dashboard/ministry/ministry_dashboard.dart';
 import 'package:ordogital/features/dashboard/parishioner/parishioner_dashboard.dart';
 import 'package:ordogital/shared/models/user_model.dart';
 import 'package:ordogital/firebase_options.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'package:sqflite_common/sqflite.dart';
 import 'package:ordogital/features/admin/admin_login_screen.dart';
 
 void main() async {
@@ -20,11 +18,11 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  if (kIsWeb) {
-    databaseFactory = databaseFactoryFfiWeb;
+  // SQLite — mobile lang, hindi web
+  if (!kIsWeb) {
+    await DatabaseHelper.instance.database;
   }
 
-  await DatabaseHelper.instance.database;
   runApp(const OrdoGitalApp());
 }
 
@@ -40,8 +38,6 @@ class OrdoGitalApp extends StatelessWidget {
       title: 'OrdoGital',
       debugShowCheckedModeBanner: false,
       theme: theme,
-      // Kapag web — Admin Portal
-      // Kapag mobile — Mobile App
       home: kIsWeb ? const AdminLoginScreen() : const SplashScreen(),
     );
   }

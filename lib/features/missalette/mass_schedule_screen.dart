@@ -1,37 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:ordogital/core/database/database_helper.dart';
 import 'package:ordogital/core/theme/app_theme.dart';
 import 'package:ordogital/core/theme/liturgical_season.dart';
 
-class MassScheduleScreen extends StatefulWidget {
+class MassScheduleScreen extends StatelessWidget {
   const MassScheduleScreen({super.key});
 
   @override
-  State<MassScheduleScreen> createState() => _MassScheduleScreenState();
-}
-
-class _MassScheduleScreenState extends State<MassScheduleScreen> {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  List<Map<String, dynamic>> _schedules = [];
-  bool _isLoading = true;
-  final season = LiturgicalCalendar.getCurrentSeason();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSchedules();
-  }
-
-  Future<void> _loadSchedules() async {
-    final results = await _db.queryAll('mass_schedules');
-    setState(() {
-      _schedules = results;
-      _isLoading = false;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final season = LiturgicalCalendar.getCurrentSeason();
     final primary = LiturgicalTheme.getPrimaryColor(season);
     final background = LiturgicalTheme.getBackgroundColor(season);
 
@@ -43,10 +20,18 @@ class _MassScheduleScreenState extends State<MassScheduleScreen> {
         title: const Text('Mass Schedule'),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primary))
-          : _schedules.isEmpty
-          ? Center(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('mass_schedules')
+            .orderBy('mass_time')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: primary));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -74,15 +59,20 @@ class _MassScheduleScreenState extends State<MassScheduleScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _schedules.length,
-              itemBuilder: (context, index) {
-                final schedule = _schedules[index];
-                return _buildScheduleCard(schedule, primary);
-              },
-            ),
+            );
+          }
+
+          final docs = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              return _buildScheduleCard(data, primary);
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -147,7 +137,7 @@ class _MassScheduleScreenState extends State<MassScheduleScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      schedule['is_recurring'] == 1
+                      schedule['is_recurring'] == true
                           ? 'Every ${_getDayName(schedule['day_of_week'])}'
                           : schedule['mass_date'] ?? '',
                       style: const TextStyle(
@@ -188,6 +178,7 @@ class _MassScheduleScreenState extends State<MassScheduleScreen> {
       'Saturday',
     ];
     if (dayOfWeek == null) return '';
-    return days[dayOfWeek % 7];
+    final index = int.tryParse(dayOfWeek.toString()) ?? 0;
+    return days[index % 7];
   }
 }

@@ -1,38 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:ordogital/core/database/database_helper.dart';
 import 'package:ordogital/core/theme/app_theme.dart';
 import 'package:ordogital/core/theme/liturgical_season.dart';
 
-class ParishProjectsScreen extends StatefulWidget {
+class ParishProjectsScreen extends StatelessWidget {
   const ParishProjectsScreen({super.key});
 
   @override
-  State<ParishProjectsScreen> createState() => _ParishProjectsScreenState();
-}
-
-class _ParishProjectsScreenState extends State<ParishProjectsScreen>
-    with SingleTickerProviderStateMixin {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  List<Map<String, dynamic>> _projects = [];
-  bool _isLoading = true;
-  final season = LiturgicalCalendar.getCurrentSeason();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProjects();
-  }
-
-  Future<void> _loadProjects() async {
-    final results = await _db.queryAll('parish_projects');
-    setState(() {
-      _projects = results;
-      _isLoading = false;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final season = LiturgicalCalendar.getCurrentSeason();
     final primary = LiturgicalTheme.getPrimaryColor(season);
     final background = LiturgicalTheme.getBackgroundColor(season);
 
@@ -44,10 +20,17 @@ class _ParishProjectsScreenState extends State<ParishProjectsScreen>
         title: const Text('Parish Projects'),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primary))
-          : _projects.isEmpty
-          ? Center(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('parish_projects')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: primary));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -66,23 +49,28 @@ class _ParishProjectsScreenState extends State<ParishProjectsScreen>
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _projects.length,
-              itemBuilder: (context, index) {
-                return _buildProjectCard(_projects[index], primary);
-              },
-            ),
+            );
+          }
+
+          final docs = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              return _buildProjectCard(data, primary);
+            },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildProjectCard(Map<String, dynamic> project, Color primary) {
-    final goal = (project['goal_amount'] as num).toDouble();
-    final current = (project['current_amount'] as num).toDouble();
+    final goal = (project['goal_amount'] as num?)?.toDouble() ?? 0.0;
+    final current = (project['current_amount'] as num?)?.toDouble() ?? 0.0;
     final progress = goal > 0 ? (current / goal).clamp(0.0, 1.0) : 0.0;
-    final percent = (progress * 100).toStringAsFixed(1);
-    final isCompleted = project['is_completed'] == 1;
+    final isCompleted = project['is_completed'] == true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -140,7 +128,6 @@ class _ParishProjectsScreenState extends State<ParishProjectsScreen>
             ),
           ],
           const SizedBox(height: 16),
-          // Progress bar
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: progress),
             duration: const Duration(milliseconds: 1200),

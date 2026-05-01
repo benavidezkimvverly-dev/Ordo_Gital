@@ -1,41 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:ordogital/core/database/database_helper.dart';
 import 'package:ordogital/core/theme/app_theme.dart';
 import 'package:ordogital/core/theme/liturgical_season.dart';
 
-class AnnouncementsScreen extends StatefulWidget {
+class AnnouncementsScreen extends StatelessWidget {
   const AnnouncementsScreen({super.key});
 
   @override
-  State<AnnouncementsScreen> createState() => _AnnouncementsScreenState();
-}
-
-class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  List<Map<String, dynamic>> _announcements = [];
-  bool _isLoading = true;
-  final season = LiturgicalCalendar.getCurrentSeason();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAnnouncements();
-  }
-
-  Future<void> _loadAnnouncements() async {
-    final results = await _db.queryWhere(
-      'announcements',
-      'is_active = ? AND (target_role = ? OR target_role = ?)',
-      [1, 'all', 'parishioner'],
-    );
-    setState(() {
-      _announcements = results;
-      _isLoading = false;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final season = LiturgicalCalendar.getCurrentSeason();
     final primary = LiturgicalTheme.getPrimaryColor(season);
     final background = LiturgicalTheme.getBackgroundColor(season);
 
@@ -47,10 +20,19 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         title: const Text('Announcements'),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primary))
-          : _announcements.isEmpty
-          ? Center(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('announcements')
+            .where('is_active', isEqualTo: true)
+            .orderBy('publish_at', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: primary));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -78,19 +60,25 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _announcements.length,
-              itemBuilder: (context, index) {
-                final announcement = _announcements[index];
-                return _buildAnnouncementCard(announcement, primary);
-              },
-            ),
+            );
+          }
+
+          final docs = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              return _buildAnnouncementCard(context, data, primary);
+            },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildAnnouncementCard(
+    BuildContext context,
     Map<String, dynamic> announcement,
     Color primary,
   ) {
@@ -99,7 +87,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
     final categoryColor = _getCategoryColor(category);
 
     return GestureDetector(
-      onTap: () => _showAnnouncementDetail(announcement, primary),
+      onTap: () => _showAnnouncementDetail(context, announcement, primary),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -186,6 +174,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   }
 
   void _showAnnouncementDetail(
+    BuildContext context,
     Map<String, dynamic> announcement,
     Color primary,
   ) {

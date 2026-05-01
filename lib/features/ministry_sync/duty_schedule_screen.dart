@@ -1,5 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:ordogital/core/database/database_helper.dart';
 import 'package:ordogital/core/theme/app_theme.dart';
 import 'package:ordogital/core/theme/liturgical_season.dart';
 import 'package:ordogital/shared/models/user_model.dart';
@@ -13,37 +13,8 @@ class DutyScheduleScreen extends StatefulWidget {
 }
 
 class _DutyScheduleScreenState extends State<DutyScheduleScreen> {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  List<Map<String, dynamic>> _duties = [];
-  bool _isLoading = true;
+  final _firestore = FirebaseFirestore.instance;
   final season = LiturgicalCalendar.getCurrentSeason();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDuties();
-  }
-
-  Future<void> _loadDuties() async {
-    final results = await _db.queryWhere('duty_assignments', 'user_id = ?', [
-      widget.user.id,
-    ]);
-
-    List<Map<String, dynamic>> duties = [];
-    for (final duty in results) {
-      final schedules = await _db.queryWhere('mass_schedules', 'id = ?', [
-        duty['schedule_id'],
-      ]);
-      if (schedules.isNotEmpty) {
-        duties.add({...duty, 'schedule': schedules.first});
-      }
-    }
-
-    setState(() {
-      _duties = duties;
-      _isLoading = false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +29,18 @@ class _DutyScheduleScreenState extends State<DutyScheduleScreen> {
         title: const Text('Duty Schedule'),
         centerTitle: true,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primary))
-          : _duties.isEmpty
-          ? Center(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore
+            .collection('duty_assignments')
+            .where('user_access_key', isEqualTo: widget.user.accessKey)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: primary));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -89,21 +68,31 @@ class _DutyScheduleScreenState extends State<DutyScheduleScreen> {
                   ),
                 ],
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _duties.length,
-              itemBuilder: (context, index) {
-                return _buildDutyCard(_duties[index], primary);
-              },
-            ),
+            );
+          }
+
+          final duties = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: duties.length,
+            itemBuilder: (context, index) {
+              final duty = duties[index];
+              final dutyData = duty.data() as Map<String, dynamic>;
+              return _buildDutyCard(duty.id, dutyData, primary);
+            },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildDutyCard(Map<String, dynamic> duty, Color primary) {
-    final schedule = duty['schedule'] as Map<String, dynamic>;
-    final isConfirmed = duty['confirmed'] == 1;
-    final roleColor = _getRoleColor(duty['role_assigned']);
+  Widget _buildDutyCard(
+    String dutyId,
+    Map<String, dynamic> duty,
+    Color primary,
+  ) {
+    final isConfirmed = duty['confirmed'] == true;
+    final roleColor = _getRoleColor(duty['role_assigned'] ?? '');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -123,7 +112,7 @@ class _DutyScheduleScreenState extends State<DutyScheduleScreen> {
             children: [
               Expanded(
                 child: Text(
-                  schedule['title'] ?? '',
+                  duty['mass_title'] ?? 'Mass',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -141,7 +130,7 @@ class _DutyScheduleScreenState extends State<DutyScheduleScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  duty['role_assigned'].toString().toUpperCase(),
+                  (duty['role_assigned'] ?? '').toString().toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -161,64 +150,61 @@ class _DutyScheduleScreenState extends State<DutyScheduleScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                schedule['mass_time'] ?? '',
+                duty['mass_time'] ?? '',
                 style: TextStyle(
                   fontSize: 13,
                   color: primary.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(width: 16),
-              Icon(
+              const Icon(
                 Icons.calendar_today,
                 size: 14,
-                color: const Color(0xFF9CA3AF),
+                color: Color(0xFF9CA3AF),
               ),
               const SizedBox(width: 4),
               Text(
-                schedule['mass_date'] ?? '',
+                duty['mass_date'] ?? '',
                 style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isConfirmed
-                      ? null
-                      : () => _confirmDuty(duty['id']),
-                  icon: Icon(
-                    isConfirmed ? Icons.check_circle : Icons.check,
-                    size: 16,
-                  ),
-                  label: Text(
-                    isConfirmed ? 'Confirmed' : 'I-confirm',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isConfirmed
-                        ? const Color(0xFF16A34A)
-                        : primary,
-                    side: BorderSide(
-                      color: isConfirmed ? const Color(0xFF16A34A) : primary,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: isConfirmed ? null : () => _confirmDuty(dutyId),
+              icon: Icon(
+                isConfirmed ? Icons.check_circle : Icons.check,
+                size: 16,
+              ),
+              label: Text(
+                isConfirmed ? 'Confirmed' : 'I-confirm',
+                style: const TextStyle(fontSize: 13),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isConfirmed
+                    ? const Color(0xFF16A34A)
+                    : primary,
+                side: BorderSide(
+                  color: isConfirmed ? const Color(0xFF16A34A) : primary,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _confirmDuty(int dutyId) async {
-    await _db.update('duty_assignments', {'confirmed': 1}, 'id = ?', [dutyId]);
-    await _loadDuties();
+  Future<void> _confirmDuty(String dutyId) async {
+    await _firestore.collection('duty_assignments').doc(dutyId).update({
+      'confirmed': true,
+    });
+
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
